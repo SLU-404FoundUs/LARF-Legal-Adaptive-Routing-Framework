@@ -191,12 +191,13 @@ def index():
 def get_sync_status():
     """Check if the vector index is up to date with the legal corpus."""
     try:
-        index_dir = os.path.join(os.getcwd(), "localfiles", "legal-basis")
+        index_dir = os.path.join(CONFIG_DIR, "localfiles", "legal-basis")
         chunks_file = os.path.join(index_dir, "combined_index.json")
+        corpus_path = os.path.join(CONFIG_DIR, "legal-corpus")
         
         logging.info(f"Sync status requested. Checking integrity: {chunks_file}")
         sync_info = legal_indexing.verify_index_integrity(
-            corpus_dir="legal-corpus",
+            corpus_dir=corpus_path,
             chunks_path=chunks_file
         )
         logging.info(f"Sync status result: {sync_info['is_synced']} ({sync_info['corpus_count']} docs)")
@@ -289,7 +290,7 @@ def chat():
                         classification = router_module._process_routing_(
                             normalized_text, 
                             history=routing_history,
-                            threshold=0.1
+                            threshold=FrameworkConfig._ROUTER_THRESHOLD
                         )
                         if classification.get("error") == "LLMEngine failed to acknowledge the input.":
                             yield json.dumps({"type": "step", "content": "Confidence below threshold — falling back to Casual conversation..."}) + "\n"
@@ -624,6 +625,7 @@ def get_config():
         "router_max_tokens": FrameworkConfig._ROUTER_MAX_TOKENS,
         "router_use_system": FrameworkConfig._ROUTER_USE_SYSTEM,
         "router_reasoning": FrameworkConfig._ROUTER_REASONING,
+        "router_threshold": FrameworkConfig._ROUTER_THRESHOLD,
         "router_instructions": FrameworkConfig._ROUTER_INSTRUCTIONS,
         
         "general_model": FrameworkConfig._GENERAL_MODEL,
@@ -683,6 +685,7 @@ def save_config():
             router_max_tokens=int(data.get('router_max_tokens', FrameworkConfig._ROUTER_MAX_TOKENS)),
             router_use_system=data.get('router_use_system', FrameworkConfig._ROUTER_USE_SYSTEM),
             router_reasoning=data.get('router_reasoning', FrameworkConfig._ROUTER_REASONING),
+            router_threshold=float(data.get('router_threshold', FrameworkConfig._ROUTER_THRESHOLD)),
             router_reasoning_effort=data.get('router_reasoning_effort', FrameworkConfig._ROUTER_REASONING_EFFORT),
             router_instructions=data.get('router_instructions', FrameworkConfig._ROUTER_INSTRUCTIONS),
             
@@ -739,6 +742,7 @@ def save_config():
         set_key(env_file, "ROUTER_MAX_TOKENS", str(FrameworkConfig._ROUTER_MAX_TOKENS))
         set_key(env_file, "ROUTER_USE_SYSTEM", str(FrameworkConfig._ROUTER_USE_SYSTEM))
         set_key(env_file, "ROUTER_REASONING", str(FrameworkConfig._ROUTER_REASONING))
+        set_key(env_file, "ROUTER_THRESHOLD", str(FrameworkConfig._ROUTER_THRESHOLD))
         set_key(env_file, "ROUTER_REASONING_EFFORT", FrameworkConfig._ROUTER_REASONING_EFFORT)
         set_key(env_file, "ROUTER_INSTRUCTIONS", FrameworkConfig._ROUTER_INSTRUCTIONS)
         
@@ -780,7 +784,7 @@ def save_config():
         router_module = SemanticRouterModule()
         
         # Retrieval module reload (re-use existing index if possible to avoid rebuild delay)
-        index_dir = os.path.join(os.getcwd(), "localfiles", "legal-basis")
+        index_dir = os.path.join(CONFIG_DIR, "localfiles", "legal-basis")
         index_file = os.path.join(index_dir, "combined_index.faiss")
         chunks_file = os.path.join(index_dir, "combined_index.json")
         
@@ -1022,7 +1026,7 @@ def api_test_router():
     """Test the Router Module: classifies normalized text into a route."""
     data = request.json
     normalized_text = data.get('normalized_text', '').strip()
-    threshold = float(data.get('threshold', 0.1))
+    threshold = float(data.get('threshold', FrameworkConfig._ROUTER_THRESHOLD))
     model = data.get('model', None)
     system_instructions = data.get('system_instructions', None)
 

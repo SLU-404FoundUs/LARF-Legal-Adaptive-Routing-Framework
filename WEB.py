@@ -113,31 +113,31 @@ try:
                 break
     
     if has_local_content:
-        corpus_path = local_corpus
-        index_dir = local_index_dir
-        app_logger.info(f"Detected local dataset at: {corpus_path}")
+        CORPUS_PATH = local_corpus
+        INDEX_DIR = local_index_dir
+        app_logger.info(f"Detected local dataset at: {CORPUS_PATH}")
     else:
-        corpus_path = os.path.join(CONFIG_DIR, "legal-corpus")
-        index_dir = os.path.join(CONFIG_DIR, "localfiles", "legal-basis")
-        app_logger.info(f"Falling back to system corpus path: {corpus_path}")
+        CORPUS_PATH = os.path.join(CONFIG_DIR, "legal-corpus")
+        INDEX_DIR = os.path.join(CONFIG_DIR, "localfiles", "legal-basis")
+        app_logger.info(f"Falling back to system corpus path: {CORPUS_PATH}")
 
-    index_file = os.path.join(index_dir, "combined_index.faiss")
-    chunks_file = os.path.join(index_dir, "combined_index.json")
+    index_file = os.path.join(INDEX_DIR, "combined_index.faiss")
+    chunks_file = os.path.join(INDEX_DIR, "combined_index.json")
     
     if os.path.exists(index_file) and os.path.exists(chunks_file):
         app_logger.info("Loading existing FAISS index...")
         retrieval_module._load_index_(index_file, chunks_file)
     else:
-        if not os.path.exists(corpus_path):
+        if not os.path.exists(CORPUS_PATH):
             msg = f"Missing 'legal-corpus' folder. Please place it inside: {CONFIG_DIR}"
             app_logger.warning(msg)
             raise Exception("legal-corpus directory not found.")
             
         app_logger.info("Building initial FAISS index for all jurisdictions (this may take a while)...")
-        os.makedirs(index_dir, exist_ok=True)
+        os.makedirs(INDEX_DIR, exist_ok=True)
         retrieval_module.build_and_save_index(
-            corpus_dir=corpus_path,
-            output_dir=index_dir,
+            corpus_dir=CORPUS_PATH,
+            output_dir=INDEX_DIR,
             index_prefix="combined_index"
         )
         app_logger.info("FAISS index built and saved successfully.")
@@ -157,7 +157,7 @@ try:
     
     # Check sync status on startup
     sync_info = legal_indexing.verify_index_integrity(
-        corpus_dir=corpus_path,
+        corpus_dir=CORPUS_PATH,
         chunks_path=chunks_file
     )
     if not sync_info["is_synced"]:
@@ -188,12 +188,11 @@ def index():
 def get_sync_status():
     """Check if the vector index is up to date with the legal corpus."""
     try:
-        index_dir = os.path.join(os.getcwd(), "localfiles", "legal-basis")
-        chunks_file = os.path.join(index_dir, "combined_index.json")
+        chunks_file = os.path.join(INDEX_DIR, "combined_index.json")
         
         logging.info(f"Sync status requested. Checking integrity: {chunks_file}")
         sync_info = legal_indexing.verify_index_integrity(
-            corpus_dir="legal-corpus",
+            corpus_dir=CORPUS_PATH,
             chunks_path=chunks_file
         )
         logging.info(f"Sync status result: {sync_info['is_synced']} ({sync_info['corpus_count']} docs)")
@@ -777,7 +776,7 @@ def save_config():
         router_module = SemanticRouterModule()
         
         # Retrieval module reload (re-use existing index if possible to avoid rebuild delay)
-        index_dir = os.path.join(os.getcwd(), "localfiles", "legal-basis")
+        index_dir = INDEX_DIR
         index_file = os.path.join(index_dir, "combined_index.faiss")
         chunks_file = os.path.join(index_dir, "combined_index.json")
         

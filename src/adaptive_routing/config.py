@@ -273,6 +273,7 @@ NO explanation.""")
     _ROUTER_USE_SYSTEM = os.getenv("ROUTER_USE_SYSTEM", "True").lower() == "true"
     _ROUTER_REASONING = os.getenv("ROUTER_REASONING", "False").lower() == "true"
     _ROUTER_REASONING_EFFORT = os.getenv("ROUTER_REASONING_EFFORT", "medium")
+    _ROUTER_THRESHOLD = float(os.getenv("ROUTER_THRESHOLD", "0.8"))
 
     ## @const_ _FALLBACKS : Legacy/Default settings.
     _DEFAULT_MODEL = _TRIAGE_MODEL 
