@@ -12,7 +12,7 @@
 
 *Saint Louis University Baguio | Team 404FoundUs*
 
-[Documentation](docs/documentation.md) • [Report Bug](issues) • [Request Feature](issues)
+[Documentation](docs/documentation.md) • [Report Bug](issues)
 
 </div>
 
